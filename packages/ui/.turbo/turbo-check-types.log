@@ -1,0 +1,4 @@
+
+> @my-better-t-app/ui@0.0.0 check-types
+> tsc --noEmit
+
