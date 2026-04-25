@@ -187,7 +187,7 @@ export async function listChunks(
   const chunksDir = await getChunksDir(recordingId);
   const metaList: ChunkMetadata[] = [];
 
-  for await (const [name] of chunksDir.entries()) {
+  for await (const [name] of chunksDir as any) {
     if (name.endsWith(".meta.json")) {
       const meta = await readJSON<ChunkMetadata>(chunksDir, name);
       if (meta) metaList.push(meta);
@@ -203,7 +203,7 @@ export async function listRecordings(): Promise<string[]> {
     const recordingsDir = await getRecordingsDir();
     const ids: string[] = [];
 
-    for await (const [name, handle] of recordingsDir.entries()) {
+    for await (const [name, handle] of recordingsDir as any) {
       if (handle.kind === "directory") {
         ids.push(name);
       }
