@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Mic, CirclePlay } from "lucide-react";
+import { Mic, CirclePlay, Play, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@my-better-t-app/ui/components/button";
@@ -18,6 +18,30 @@ interface Recording {
 
 export default function Home() {
   const [recordings, setRecordings] = useState<Recording[]>([]);
+  const [playingId, setPlayingId] = useState<string | null>(null);
+
+  const playRecording = async (recordingId: string) => {
+    if (playingId) return;
+    setPlayingId(recordingId);
+    
+    try {
+      const res = await fetch(`${SERVER_URL}/api/chunks/by-recording/${recordingId}`);
+      const chunks = await res.json();
+      
+      for (const chunk of chunks) {
+        const audio = new Audio(`${SERVER_URL}/api/chunks/download/${chunk.id}`);
+        await new Promise((resolve, reject) => {
+          audio.onended = resolve;
+          audio.onerror = reject;
+          audio.play().catch(reject);
+        });
+      }
+    } catch (err) {
+      console.error("Playback failed", err);
+    } finally {
+      setPlayingId(null);
+    }
+  };
 
   useEffect(() => {
     fetch(`${SERVER_URL}/api/recordings`)
@@ -66,11 +90,26 @@ export default function Home() {
                   <div className={`size-2.5 rounded-full ${rec.status === "completed" ? "bg-emerald-500" : "bg-blue-500 animate-pulse"}`} />
                   <span className="font-mono text-sm font-medium">{rec.id.slice(0, 8)}</span>
                 </div>
-                {rec.totalDuration && (
-                  <span className="text-sm text-muted-foreground">
-                    {rec.totalDuration.toFixed(1)}s
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  {rec.totalDuration && (
+                    <span className="text-xs text-muted-foreground mr-2">
+                      {rec.totalDuration.toFixed(1)}s
+                    </span>
+                  )}
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="size-8 rounded-full hover:bg-emerald-500/10 hover:text-emerald-600"
+                    onClick={() => playRecording(rec.id)}
+                    disabled={playingId !== null || rec.status !== "completed"}
+                  >
+                    {playingId === rec.id ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Play className="size-4 fill-current" />
+                    )}
+                  </Button>
+                </div>
               </div>
             ))}
           </div>

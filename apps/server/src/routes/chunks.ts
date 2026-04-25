@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { db, chunks } from "@my-better-t-app/db";
 import { eq, inArray } from "drizzle-orm";
 import { Hono } from "hono";
-import { chunkExists, saveChunk } from "../storage";
+import { chunkExists, getChunk, saveChunk } from "../storage";
 
 const app = new Hono();
 
@@ -199,6 +199,31 @@ app.get("/by-recording/:recordingId", async (c) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return c.json({ error: `Failed to get chunks: ${message}` }, 500);
+  }
+});
+
+// Download actual chunk file
+app.get("/download/:id", async (c) => {
+  const id = c.req.param("id");
+
+  try {
+    const chunk = await db.query.chunks.findFirst({
+      where: eq(chunks.id, id),
+    });
+
+    if (!chunk) {
+      return c.json({ error: "Chunk not found in database" }, 404);
+    }
+
+    const data = await getChunk(chunk.bucketKey);
+    
+    return c.body(data, 200, {
+      "Content-Type": "audio/wav",
+      "Content-Disposition": `attachment; filename="${id}.wav"`,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return c.json({ error: `Download failed: ${message}` }, 500);
   }
 });
 
