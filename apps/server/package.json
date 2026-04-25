@@ -7,7 +7,7 @@
     "check-types": "tsc -b",
     "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",
     "dev": "npx tsx watch src/index.ts",
-    "start": "bun run dist/index.mjs"
+    "start": "node dist/index.mjs"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.12",

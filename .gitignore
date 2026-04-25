@@ -1,1 +1,10 @@
 node_modules
+.next
+dist
+.turbo
+*.log
+.env
+.env.local
+.env.production
+apps/server/uploads/*
+!apps/server/uploads/.gitkeep
