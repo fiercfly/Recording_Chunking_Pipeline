@@ -68,6 +68,8 @@ function ChunkItem({ chunk, index }: { chunk: WavChunk; index: number }) {
 }
 
 export default function RecorderPage() {
+  const [playing, setPlaying] = useState(false);
+
   const {
     status,
     start,
@@ -79,6 +81,26 @@ export default function RecorderPage() {
     stream,
     uploadStats,
   } = useRecorder({ chunkDuration: 5 });
+
+  const playRecordingLocally = async () => {
+    if (playing) return;
+    setPlaying(true);
+    try {
+      const sortedChunks = [...chunks].sort((a, b) => a.chunkIndex - b.chunkIndex);
+      for (const chunk of sortedChunks) {
+        const audio = new Audio(chunk.url);
+        await new Promise((resolve, reject) => {
+          audio.onended = resolve;
+          audio.onerror = reject;
+          audio.play().catch(reject);
+        });
+      }
+    } catch (err) {
+      console.error("Local playback failed", err);
+    } finally {
+      setPlaying(false);
+    }
+  };
 
   const isActive = status === "recording" || status === "paused";
 
@@ -140,6 +162,22 @@ export default function RecorderPage() {
                 className="size-16 rounded-full shadow-sm"
               >
                 {status === "paused" ? <Play className="size-6" fill="currentColor" /> : <Pause className="size-6" fill="currentColor" />}
+              </Button>
+            )}
+
+            {!isActive && chunks.length > 0 && (
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={playRecordingLocally}
+                disabled={playing}
+                className="h-16 rounded-full px-8 text-lg font-bold border-2 hover:bg-emerald-500/10 hover:text-emerald-600 transition-all"
+              >
+                {playing ? (
+                  <><Loader2 className="size-5 mr-2 animate-spin" /> Playing...</>
+                ) : (
+                  <><Play className="size-5 mr-2 fill-current" /> Review Session</>
+                )}
               </Button>
             )}
           </div>
